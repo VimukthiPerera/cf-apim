@@ -993,6 +993,27 @@ Parameters:
     Default: ""
     NoEcho: true
     Description: Enter WUM User Password to get the updated WSO2 products deployed. If not provided standard released pack will be deployed
+  JDK:
+    Type: String
+    Default: "JDK8"
+    Description: Target Java version
+    AllowedValues:
+      - JDK7
+      - JDK8
+  DBEngine:
+    Type: String
+    Default: "mysql"
+    Description: Database Engine
+    AllowedValues:
+      - mysql
+      - postgres
+      - mariadb
+      - sqlserver-ex
+      - oracle-se
+  DBEngineVersion:
+    Type: String
+    Default: "5.6.35"
+    Description: Database Engine version
 Mappings:
   WSO2APIMAMIRegionMap:
     ap-northeast-1:
