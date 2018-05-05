@@ -13,7 +13,7 @@ function showUsageAndExit(){
   echo "  APIM-ANALYTICS - WSO2 API Manager Analytics"
   echo
   echo "Supported versions"
-  echo "  2.1.0"
+  echo "  2.2.0"
   echo
   echo "Usage: "
   echo "    bash create-AMI.sh -p APIM"
@@ -23,7 +23,7 @@ function showUsageAndExit(){
 }
 
 product=""
-version="2.1.0" # Only 2.1.0 is supported as of now
+version="2.2.0" # Only 2.2.0 is supported as of now
 while getopts :p: FLAG; do
   case $FLAG in
     p)

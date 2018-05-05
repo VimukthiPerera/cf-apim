@@ -5,7 +5,7 @@
     "product": "",
     "version": "",
     "name": "BASE",
-    "base_ami": "ami-d8359ca5",
+    "base_ami": "ami-2fee0b39",
     "region": "us-east-1",
     "buildtime": "{{ isotime \"2006-01-02-1504\" }}"
   },
@@ -19,6 +19,7 @@
       "instance_type": "t2.medium",
       "ssh_username": "ubuntu",
       "ami_name": "{{user `name`}}-{{user `product`}}-{{user `version`}}-{{isotime \"2006-01-02-1504\"}}",
+      "ami_groups": "all",
       "ami_description": "WSO2 {{user `product`}} Default profile on Ubuntu 14.04",
       "tags": {
         "Name": "{{user `name`}}-{{user `product`}}-{{user `version`}}",

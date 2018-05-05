@@ -22,7 +22,7 @@ wso2::type_mapping_string_type_mysql: VARCHAR(254)
 wso2::service_name: wso2am_analytics
 wso2::hostname: CF_ANALYTICS_ELB_DNS_NAME
 wso2::mgt_hostname: CF_ANALYTICS_ELB_DNS_NAME
-wso2::pack_filename: wso2am-analytics-2.1.0.zip
+wso2::pack_filename: wso2am-analytics-2.2.0.zip
 
 wso2::key_store: wso2carbon.jks
 wso2::trust_store: client-truststore.jks

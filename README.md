@@ -1,4 +1,4 @@
-# AWS CloudFormation for WSO2 API Manager 2.1.0
+# AWS CloudFormation for WSO2 API Manager 2.2.0
 
 This repository contains the CloudFormation template for WSO2 API Manager and resources required to create WSO2 API Manager and WSO2 API Manager Analytics Amazon Machine Images (AMIs).
 
@@ -14,10 +14,10 @@ This repository contains the CloudFormation template for WSO2 API Manager and re
    ```
 
 2. Set the AWS region required for creating the AMIs in the packer-conf.json file:
-   
+
    ```json
    {
-       "variables": 
+       "variables":
        {
            ...
            "region": "us-east-2",
@@ -58,15 +58,15 @@ Then, choose the template file of your choice from **patterns** directory (e.g. 
 7. Under parameters,
 
     7.1. Enter your **AWS Access Key ID**.
-    
+
     7.2. Enter your **AWS Access Key Secret**.
-    
+
     7.3. Choose a desired AWS key pair name of your choice, belonging to the region in which you are running the stack.
-    
+
     7.4. Enter 'wso2carbon' as the certificate at the load balancer for APIM.
-    
+
     7.5. If desired, change the WSO2 APIM database master username and/or master password.
-    
+
 8. Select **Next**.
 
 ![Specify details](quickstart/images/page-2.png)

@@ -38,7 +38,7 @@ wso2::service_name: wso2am
 wso2::hostname: CF_ELB_DNS_NAME
 wso2::mgt_hostname: CF_ELB_DNS_NAME
 wso2::product_profile: default
-wso2::pack_filename: wso2am-2.1.0.zip
+wso2::pack_filename: wso2am-2.2.0.zip
 
 # Prevent Puppet from starting the Service automatically.
 wso2::autostart_service: false

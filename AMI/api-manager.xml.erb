@@ -2,7 +2,7 @@
     <!-- JNDI name of the data source to be used by the API publisher, API store and API
          key manager. This data source should be defined in the master-datasources.xml file
          in conf/datasources directory. -->
-    <DataSourceName>jdbc/WSO2AM_DB</DataSourceName>
+    <DataSourceName><%= @am_datasources[@am_datasource]['jndi_config'] %></DataSourceName>
 
     <!-- This parameter is used when adding api management capability to other products like GReg, AS, DSS etc.-->
     <GatewayType>Synapse</GatewayType>
@@ -16,15 +16,36 @@
          logic relies on this. -->
 
     <AuthManager>
-        <!-- Server URL of the Authentication service -->
-        <ServerURL>https://localhost:${mgt.transport.https.port}${carbon.context}services/</ServerURL>
-        <!-- Admin username for the Authentication manager. -->
-        <Username>${admin.username}</Username>
-        <!-- Admin password for the Authentication manager. -->
-        <Password>${admin.password}</Password>
-        <!-- Indicates whether the permissions checking of the user (on the Publisher and Store) should be done
-           via a remote service. The check will be done on the local server when false. -->
-        <CheckPermissionsRemotely>false</CheckPermissionsRemotely>
+        <!--
+            Server URL of the Authentication service
+        -->
+        <%- if (@apply_publisher_specific_configurations or @apply_store_specific_configurations) and @apim_keymanager and @apim_keymanager['host'] and @apim_keymanager['port'] -%>
+          <ServerURL>https://<%= @apim_keymanager['host'] %>:<%= @apim_keymanager['port'] %>/services/</ServerURL>
+        <%- else -%>
+           <ServerURL>https://${carbon.local.ip}:${mgt.transport.https.port}${carbon.context}services/</ServerURL>
+        <%- end -%>
+
+        <!--
+            Admin username for the Authentication manager.
+        -->
+        <%- if @apim_keymanager and @apim_keymanager['username'] -%>
+          <Username><%= @apim_keymanager['username'] %></Username>
+        <%- else -%>
+          <Username>${admin.username}</Username>
+        <%- end -%>
+        <!--
+            Admin password for the Authentication manager.
+        -->
+        <%- if @apim_keymanager and @apim_keymanager['password'] -%>
+          <Password><%= @apim_keymanager['password'] %></Password>
+        <%- else -%>
+          <Password>${admin.password}</Password>
+        <%- end -%>
+	<!--
+	   Indicates whether the permissions checking of the user (on the Publisher and Store) should be done
+	   via a remote service. The check will be done on the local server when false.
+	-->
+	<CheckPermissionsRemotely>false</CheckPermissionsRemotely>
     </AuthManager>
 
     <JWTConfiguration>
@@ -79,25 +100,64 @@
         create/update published API configurations.
     -->
     <APIGateway>
-        <!-- The environments to which an API will be published -->
-        <Environments>
-            <!-- Environments can be of different types. Allowed values are 'hybrid', 'production' and 'sandbox'.
-                 An API deployed on a 'production' type gateway will only support production keys
-                 An API deployed on a 'sandbox' type gateway will only support sandbox keys
-                 An API deployed on a 'hybrid' type gateway will support both production and sandbox keys. -->
-            <!-- api-console element specifies whether the environment should be listed in API Console or not -->
-            <Environment type="hybrid" api-console="true">
-                <Name>Production and Sandbox</Name>
-                <Description>This is a hybrid gateway that handles both production and sandbox token traffic.</Description>
-                <!-- Server URL of the API gateway -->
-                <ServerURL>https://localhost:${mgt.transport.https.port}${carbon.context}services/</ServerURL>
-		        <!-- Admin username for the API gateway. -->
-                <Username>${admin.username}</Username>
-                <!-- Admin password for the API gateway.-->
-                <Password>${admin.password}</Password>
-                <!-- Endpoint URLs for the APIs hosted in this API gateway.-->
-                <GatewayEndpoint>http://localhost:${http.nio.port},https://localhost:${https.nio.port}</GatewayEndpoint>
-            </Environment>
+	<!-- The environments to which an API will be published -->
+	    <Environments>
+		<!-- Environments can be of different types. Allowed values are 'hybrid', 'production' and 'sandbox'.
+		     An API deployed on a 'production' type gateway will only support production keys
+		     An API deployed on a 'sandbox' type gateway will only support sandbox keys
+		     An API deployed on a 'hybrid' type gateway will support both production and sandbox keys. -->
+		<!-- api-console element specifies whether the environment should be listed in API Console or not -->
+                 <%- @environments.each do |environment_name, environment| -%>
+                    <Environment type="hybrid" api-console="true">
+                        <%- if (@apply_publisher_specific_configurations or @apply_store_specific_configurations) and environment['name'] -%>
+                          <Name><%= environment['name'] %></Name>
+                        <%- else -%>
+                          <Name>Production and Sandbox</Name>
+                        <%- end -%>
+                        <%- if (@apply_publisher_specific_configurations or @apply_store_specific_configurations) and environment['description'] -%>
+                          <Description><%= environment['description'] %></Description>
+                        <%- else -%>
+                          <Description>This is a hybrid gateway that handles both production and sandbox token traffic.</Description>
+                        <%- end -%>
+                        <!--
+                                Server URL of the API gateway.
+                        -->
+                        <%- if (@apply_publisher_specific_configurations or @apply_store_specific_configurations) and
+                        environment['host'] and environment['port']-%>
+                          <ServerURL>https://<%= environment['host'] %>:<%= environment['port'] %>/services/</ServerURL>
+                        <%- else -%>
+                          <ServerURL>https://${carbon.local.ip}:${mgt.transport.https.port}${carbon.context}services/</ServerURL>
+                        <%- end -%>
+                        <!--
+                            Admin username for the API gateway.
+                        -->
+                        <%- if (@apply_publisher_specific_configurations or @apply_store_specific_configurations) and
+                        environment['username'] -%>
+                          <Username><%= environment['username'] %></Username>
+                        <%- else -%>
+                          <Username>${admin.username}</Username>
+                        <%- end -%>
+                        <!--
+                            Admin password for the API gateway.
+                        -->
+                        <%- if (@apply_publisher_specific_configurations or @apply_store_specific_configurations) and
+                        environment['password'] -%>
+                          <Password><%= environment['password'] %></Password>
+                        <%- else -%>
+                           <Password>${admin.password}</Password>
+                        <%- end -%>
+
+    			        <!--
+                			Endpoint URLs for the APIs hosted in this API gateway.
+            		    -->
+                        <%- if (@apply_publisher_specific_configurations or @apply_store_specific_configurations) and environment['api_endpoint_host'] and
+                          environment['api_endpoint_port'] and  environment['secure_api_endpoint_port']-%>
+                          <GatewayEndpoint>http://<%= environment['api_endpoint_host'] %>:<%= environment['api_endpoint_port'] %>,https://<%= environment['api_endpoint_host'] %>:<%= environment['secure_api_endpoint_port'] %></GatewayEndpoint>
+                        <%- else -%>
+                          <GatewayEndpoint>http://${carbon.local.ip}:${http.nio.port},https://${carbon.local.ip}:${https.nio.port}</GatewayEndpoint>
+                        <%- end -%>
+                    </Environment>
+                    <%- end -%>
         </Environments>
     </APIGateway>
 
@@ -128,8 +188,11 @@
     -->
     <Analytics>
         <!-- Enable Analytics for API Manager -->
-        <Enabled>true</Enabled>
-
+        <%- if @analytics and @analytics['enabled'] -%>
+        <Enabled><%= @analytics['enabled'] %></Enabled>
+        <%- else -%>
+        <Enabled>false</Enabled>
+        <%- end -%>
         <!-- Server URL of the remote DAS/CEP server used to collect statistics. Must
              be specified in protocol://hostname:port/ format.
 
@@ -140,25 +203,51 @@
 
              Ex - Multiple Receiver Groups with two receivers each
              {tcp://localhost:7612/,tcp://localhost:7613},{tcp://localhost:7712/,tcp://localhost:7713/} -->
+        <%- if @analytics and @analytics['enabled'] and @analytics['server_host'] and @analytics['server_port'] -%>
         <DASServerURL>{tcp://<%= @analytics['server_host'] %>:<%= @analytics['server_port'] %>}</DASServerURL>
-        <DASAuthServerURL>{ssl://<%= @analytics['server_host'] %>:7711}</DASAuthServerURL>
+        <%- else -%>
+        <DASServerURL>{tcp://localhost:7612}</DASServerURL>
+        <%- end -%>
+        <!--DASAuthServerURL>{ssl://localhost:7712}</DASAuthServerURL-->
         <!-- Administrator username to login to the remote DAS server. -->
-        <DASUsername>admin</DASUsername>
+        <%- if @analytics and @analytics['enabled'] and @analytics['server_username'] -%>
+        <DASUsername><%= @analytics['server_username'] %></DASUsername>
+        <%- else -%>
+        <DASUsername>${admin.username}</DASUsername>
+        <%- end -%>
         <!-- Administrator password to login to the remote DAS server. -->
-        <DASPassword>admin</DASPassword>
+        <%- if @analytics and @analytics['enabled'] and @analytics['server_password'] -%>
+        <DASPassword><%= @analytics['server_password'] %></DASPassword>
+        <%- else -%>
+        <DASPassword>${admin.password}</DASPassword>
+        <%- end -%>
 
         <!-- For APIM implemented Statistic client for RDBMS -->
         <StatsProviderImpl>org.wso2.carbon.apimgt.usage.client.impl.APIUsageStatisticsRdbmsClientImpl</StatsProviderImpl>
 
         <!-- DAS REST API configuration -->
+        <%- if @analytics and @analytics['enabled'] and @analytics['server_host'] and @analytics['server_port'] -%>
         <DASRestApiURL>https://<%= @analytics['server_host'] %>:<%= @analytics['server_https_port'] %></DASRestApiURL>
-        <DASRestApiUsername>admin</DASRestApiUsername>
-        <DASRestApiPassword>admin</DASRestApiPassword>
-
+        <%- else -%>
+        <DASRestApiURL>https://localhost:9444</DASRestApiURL>
+        <%- end -%>
+        <%- if @analytics and @analytics['enabled'] and @analytics['server_username'] -%>
+        <DASRestApiUsername><%= @analytics['server_username'] %></DASRestApiUsername>
+        <%- else -%>
+        <DASRestApiUsername>${admin.username}</DASRestApiUsername>
+        <%- end -%>
+        <%- if @analytics and @analytics['enabled'] and @analytics['server_password'] -%>
+        <DASRestApiPassword><%= @analytics['server_password'] %></DASRestApiPassword>
+        <%- else -%>
+        <DASRestApiPassword>${admin.password}</DASRestApiPassword>
+        <%- end -%>
         <!-- Below property is used to skip trying to connect to event receiver nodes when publishing events even if
             the stats enabled flag is set to true. -->
+        <%- if @analytics and @analytics['skip_event_receiver_connection'] -%>
+        <SkipEventReceiverConnection><%= @analytics['skip_event_receiver_connection'] %></SkipEventReceiverConnection>
+        <%- else -%>
         <SkipEventReceiverConnection>false</SkipEventReceiverConnection>
-
+        <%- end -%>
         <!-- API Usage Data Publisher. -->
         <PublisherClass>org.wso2.carbon.apimgt.usage.publisher.APIMgtUsageDataBridgeDataPublisher</PublisherClass>
 
@@ -205,13 +294,37 @@
         API gateway uses it to validate and authenticate users against the provided API keys.
     -->
     <APIKeyValidator>
-        <!-- Server URL of the API key manager -->
-        <ServerURL>https://localhost:${mgt.transport.https.port}${carbon.context}services/</ServerURL>
+        <!--
+            Server URL of the API key manager
+        -->
+        <%- if (@apply_store_specific_configurations or @apply_gateway_specific_configurations) and
+            @apim_keymanager and @apim_keymanager['host'] and @apim_keymanager['port'] -%>
+          <ServerURL>https://<%= @apim_keymanager['host'] %>:<%= @apim_keymanager['port'] %>/services/</ServerURL>
+        <%- else -%>
+           <ServerURL>https://${carbon.local.ip}:${mgt.transport.https.port}${carbon.context}services/</ServerURL>
+        <%- end -%>
 
-        <!-- Admin username for API key manager. -->
-        <Username>${admin.username}</Username>
-        <!-- Admin password for API key manager. -->
-        <Password>${admin.password}</Password>
+        <!--
+            Admin username for API key manager.
+        -->
+        <%- if (@apply_store_specific_configurations or @apply_gateway_specific_configurations) and
+            @apim_keymanager and @apim_keymanager['username'] -%>
+          <Username><%= @apim_keymanager['username'] %></Username>
+        <%- else -%>
+          <Username>${admin.username}</Username>
+        <%- end -%>
+
+        <!--
+            Admin password for API key manager.
+        -->
+        <%- if (@apply_store_specific_configurations or @apply_gateway_specific_configurations) and
+            @apim_keymanager and @apim_keymanager['password'] -%>
+          <Password><%= @apim_keymanager['password'] %></Password>
+        <%- else -%>
+          <Password>${admin.password}</Password>
+        <%- end -%>
+
+
 
         <!-- Configurations related to enable thrift support for key-management related communication.
              If you want to switch back to Web Service Client, change the value of "KeyValidatorClientType" to "WSClient".
@@ -220,12 +333,12 @@
              -If you need to start two API Manager instances in the same machine, you need to give different ports to "ThriftServerPort" value in two nodes.
              -ThriftServerHost - Allows to configure a hostname for the thrift server. It uses the carbon hostname by default.
 	         -The Gateway uses this parameter to connect to the key validation thrift service. -->
-        <KeyValidatorClientType>WSClient</KeyValidatorClientType>
+        <KeyValidatorClientType><%= @key_validator_client_type %></KeyValidatorClientType>
         <ThriftClientConnectionTimeOut>10000</ThriftClientConnectionTimeOut>
         <!--ThriftClientPort>10397</ThriftClientPort-->
 
-        <EnableThriftServer>false</EnableThriftServer>
-        <ThriftServerHost>localhost</ThriftServerHost>
+        <EnableThriftServer><%= @enable_thrift_server %></EnableThriftServer>
+        <ThriftServerHost><%= @thrift_server_host %></ThriftServerHost>
         <!--ThriftServerPort>10397</ThriftServerPort-->
 
         <!--ConnectionPool>
@@ -276,7 +389,12 @@
              In distributed deployment we should configure this property in key manager node by pointing
              gateway https( /http, we recommend users to use 'https' endpoints for security purpose) url.
              Also please note that we should point gateway revoke service to key manager -->
-        <RevokeAPIURL>https://localhost:${https.nio.port}/revoke</RevokeAPIURL>
+        <%- if @apply_store_specific_configurations and @environments and @environments['apim_gateway_lan']['api_endpoint_host'] and
+        @environments['apim_gateway_lan']['port']-%>
+        <RevokeAPIURL>https://<%= @environments['apim_gateway_lan']['api_endpoint_host'] %>:<%= @environments['apim_gateway_lan']['secure_api_token_revoke_endpoint_port'] %>/revoke</RevokeAPIURL>
+        <%- else -%>
+        <RevokeAPIURL>https://${carbon.local.ip}:${https.nio.port}/revoke</RevokeAPIURL>
+        <%- end -%>
         <!-- Whether to encrypt tokens when storing in the Database
         Note: If changing this value to true, change the value of <TokenPersistenceProcessor> to
         org.wso2.carbon.identity.oauth.tokenprocessor.EncryptionDecryptionPersistenceProcessor in the identity.xml -->
@@ -294,39 +412,66 @@
         <EnableUnlimitedTier>true</EnableUnlimitedTier>
     </TierManagement>
 
-    <!-- API Store Related Configurations -->
+
+
+    <!--
+        Use this configuration to control the number of APIs shown in API store.
+    -->
     <APIStore>
-        <EnableMultipleGroupId>false</EnableMultipleGroupId>
-        <!--GroupingExtractor>org.wso2.carbon.apimgt.impl.DefaultGroupIDExtractorImpl</GroupingExtractor-->
-        <!--This property is used to indicate how we do user name comparision for token generation https://wso2.org/jira/browse/APIMANAGER-2225-->
-        <CompareCaseInsensitively>true</CompareCaseInsensitively>
+	<!--This property is used to indicate how we do user name comparision for token generation https://wso2.org/jira/browse/APIMANAGER-2225-->
+	<!--GroupingExtractor>org.wso2.carbon.apimgt.impl.DefaultGroupIDExtractorImpl</GroupingExtractor-->
+	<CompareCaseInsensitively>true</CompareCaseInsensitively>
         <DisplayURL>false</DisplayURL>
-        <URL>https://localhost:${mgt.transport.https.port}/store</URL>
+        <%- if @apim_store and @apim_store['host'] and @apim_store['port'] -%>
+          <URL>https://<%= @apim_store['host'] %>:<%= @apim_store['port'] %>/store</URL>
+        <%- else -%>
+           <URL>https://${carbon.local.ip}:${mgt.transport.https.port}/store</URL>
+        <%- end -%>
+        <!--
+            Server URL of the API Store.
+        -->
 
-        <!-- Server URL of the API Store. -->
-        <ServerURL>https://localhost:${mgt.transport.https.port}${carbon.context}services/</ServerURL>
-        <!-- Admin username for API Store. -->
-        <Username>${admin.username}</Username>
+        <ServerURL>https://<%= @apim_store['host'] %>:<%= @apim_store['port']%>${carbon.context}services/</ServerURL>
+        <!--
+            Admin username for API Store.
+        -->
+        <Username>admin</Username>
 
-        <!-- Admin password for API Store. -->
-        <Password>${admin.password}</Password>
-        <!-- This parameter specifies whether to display multiple versions of same
-             API or only showing the latest version of an API. -->
+        <!--
+            Admin password for API Store.
+        -->
+        <Password>admin</Password>
+        <!--
+            This parameter specifies whether to display multiple versions of same
+            API or only showing the latest version of an API.
+
+        -->
         <DisplayMultipleVersions>false</DisplayMultipleVersions>
-        <!-- This parameter specifies whether to display all the APIs
-             [which are having DEPRECATED/PUBLISHED status] or only display the APIs
-             with having their status is as 'PUBLISHED' -->
+        <!--
+            This parameter specifies whether to display all the APIs
+            [which are having DEPRECATED/PUBLISHED status] or only display the APIs
+            with having their status is as 'PUBLISHED'
+
+        -->
         <DisplayAllAPIs>false</DisplayAllAPIs>
-        <!-- Uncomment this to limit the number of APIs in api the API Store -->
+        <!--
+              Uncomment this to limit the number of APIs in api the API Store
+          -->
         <!--APIsPerPage>5</APIsPerPage-->
 
-        <!-- This parameter specifies whether to display the comment editing facility or not.
-             Default is "true". If user wants to disable, he must set this param as "false" -->
-        <DisplayComments>true</DisplayComments>
+		 <!--
+            This parameter specifies whether to display the comment editing facility or not.
+           Default is "true". If user wants to disable, he must set this param as "false"
 
-        <!-- This parameter specifies whether to display the ratings  or not.
-             Default is "true". If user wants to disable, he must set this param as "false" -->
-        <DisplayRatings>true</DisplayRatings>
+        -->
+		<DisplayComments>true</DisplayComments>
+
+		 <!--
+            This parameter specifies whether to display the ratings  or not.
+           Default is "true". If user wants to disable, he must set this param as "false"
+
+        -->
+		<DisplayRatings>true</DisplayRatings>
 
         <!--set isStoreForumEnabled to false for disable forum in store-->
         <!--isStoreForumEnabled>false</isStoreForumEnabled-->
@@ -335,52 +480,66 @@
 
     <APIPublisher>
         <DisplayURL>false</DisplayURL>
-        <URL>https://localhost:${mgt.transport.https.port}/publisher</URL>
-        <!-- This parameter specifies enabling the capability of setting API documentation level granular visibility levels.
-             By default any document associate with an API will have the same permissions set as the API.With enabling below
-             property,it will show two additional permission levels as visible only to all registered users in a particular
-             domain or only visible to API doc creator -->
+        <%- if @apim_publisher and @apim_publisher['host'] and @apim_publisher['port'] -%>
+          <URL>https://<%= @apim_publisher['host'] %>:<%= @apim_publisher['port'] %>/publisher</URL>
+        <%- else -%>
+          <URL>https://${carbon.local.ip}:${mgt.transport.https.port}/publisher</URL>
+        <%- end -%>
+        <!--
+               This parameter specifies enabling the capability of setting API documentation level granular visibility levels.
+               By default any document associate with an API will have the same permissions set as the API.With enabling below
+               property,it will show two additional permission levels as visible only to all registered users in a particular
+               domain or only visible to API doc creator
+      -->
         <!--EnableAPIDocVisibilityLevels>true</EnableAPIDocVisibilityLevels-->
         <!-- Uncomment this to limit the number of APIs in api the API Publisher -->
         <!--APIsPerPage>30</APIsPerPage-->
-        <!-- This property need to be enabled to enable the publisher access control support -->
         <EnableAccessControl>true</EnableAccessControl>
     </APIPublisher>
 
-    <!-- Status observers can be registered against the API Publisher to listen for
-         API status update events. Each observer must implement the APIStatusObserver
-         interface. Multiple observers can be engaged if necessary and in such situations
-         they will be notified in the order they are defined here. 
-         This configuration is unused from API Manager version 1.10.0 -->
+    <!--
+        Status observers can be registered against the API Publisher to listen for
+        API status update events. Each observer must implement the APIStatusObserver
+        interface. Multiple observers can be engaged if necessary and in such situations
+        they will be notified in the order they are defined here.
+        This configuration is unused from API Manager version 1.10.0
+    -->
     <!--StatusObservers>
         <Observer>org.wso2.carbon.apimgt.impl.observers.SimpleLoggingObserver</Observer>
     </StatusObservers-->
 
-    <!-- Configuration to enable/disable sending CORS headers in the Gateway response
-         and define the Access-Control-Allow-Origin header value.-->
+    <!--
+	Use this configuration Create APIs at the Server startup
+    -->
+
+    <!--Configuration to enable/disable sending CORS headers in the Gateway response
+        and define the Access-Control-Allow-Origin header value.-->
     <CORSConfiguration>
-        <!-- Configuration to enable/disable sending CORS headers from the Gateway-->
-        <Enabled>true</Enabled>
 
-        <!-- The value of the Access-Control-Allow-Origin header. Default values are
-             API Store addresses, which is needed for swagger to function. -->
-        <Access-Control-Allow-Origin>*</Access-Control-Allow-Origin>
+	<!--Configuration to enable/disable sending CORS headers from the Gateway-->
+	<Enabled>true</Enabled>
 
-        <!-- Configure Access-Control-Allow-Methods -->
-        <Access-Control-Allow-Methods>GET,PUT,POST,DELETE,PATCH,OPTIONS</Access-Control-Allow-Methods>
+	<!--The value of the Access-Control-Allow-Origin header. Default values are
+	    API Store addresses, which is needed for swagger to function.-->
+	<Access-Control-Allow-Origin>*</Access-Control-Allow-Origin>
 
-        <!-- Configure Access-Control-Allow-Headers -->
-        <Access-Control-Allow-Headers>authorization,Access-Control-Allow-Origin,Content-Type,SOAPAction</Access-Control-Allow-Headers>
+	<!--Configure Access-Control-Allow-Methods-->
+	<Access-Control-Allow-Methods>GET,PUT,POST,DELETE,PATCH,OPTIONS</Access-Control-Allow-Methods>
 
-        <!-- Configure Access-Control-Allow-Credentials -->
-        <!-- Specifying this header to true means that the server allows cookies (or other user credentials) to be included on cross-origin requests.
-             It is false by default and if you set it to true then make sure that the Access-Control-Allow-Origin header does not contain the wildcard (*) -->
-        <Access-Control-Allow-Credentials>false</Access-Control-Allow-Credentials>
+	<!--Configure Access-Control-Allow-Headers-->
+	<Access-Control-Allow-Headers>authorization,Access-Control-Allow-Origin,Content-Type,SOAPAction</Access-Control-Allow-Headers>
+
+            <!--Configure Access-Control-Allow-Credentials-->
+    <!-- Specifying this header to true means that the server allows cookies (or other user credentials) to be included on cross-origin requests.
+         It is false by default and if you set it to true then make sure that the Access-Control-Allow-Origin header does not contain the wildcard (*)
+    -->
+    <Access-Control-Allow-Credentials>false</Access-Control-Allow-Credentials>
+
     </CORSConfiguration>
-    
-    <!-- This property is there to configure velocity log output into existing Log4j carbon Logger.
-         You can enable this and set preferable Logger name. -->
-    <!-- VelocityLogger>VELOCITY</VelocityLogger -->
+   <!-- This property is there to configure velocity log output into existing Log4j carbon Logger.
+ 	You can enable this and set preferable Logger name.
+   -->
+   <!--VelocityLogger>VELOCITY</VelocityLogger-->
 
     <RESTAPI>
         <!--Configure white-listed URIs of REST API. Accessing white-listed URIs does not require credentials (does not require Authorization header). -->
@@ -550,16 +709,32 @@
         </ETagSkipList>
     </RESTAPI>
     <ThrottlingConfigurations>
-        <EnableAdvanceThrottling>true</EnableAdvanceThrottling>
-        <TrafficManager>
-            <Type>Binary</Type>
-            <ReceiverUrlGroup>tcp://${carbon.local.ip}:${receiver.url.port}</ReceiverUrlGroup>
-            <AuthUrlGroup>ssl://${carbon.local.ip}:${auth.url.port}</AuthUrlGroup>
-            <Username>${admin.username}</Username>
-            <Password>${admin.password}</Password>
-        </TrafficManager>
+        <EnableAdvanceThrottling><%= @enable_advance_throttling %></EnableAdvanceThrottling>
         <DataPublisher>
-            <Enabled>true</Enabled>
+            <Enabled><%= @enable_data_publisher %></Enabled>
+            <Type>Binary</Type>
+            <%- if @apply_gateway_specific_configurations and @apim_traffic_manager and @apim_traffic_manager['host'] and
+                @apim_traffic_manager['receiver_url_port'] -%>
+                <ReceiverUrlGroup>tcp://<%= @apim_traffic_manager['host'] %>:<%= @apim_traffic_manager['receiver_url_port'] %></ReceiverUrlGroup>
+            <%- else -%>
+                <ReceiverUrlGroup>tcp://${carbon.local.ip}:${receiver.url.port}</ReceiverUrlGroup>
+            <%- end -%>
+            <%- if @apply_gateway_specific_configurations and @apim_traffic_manager and @apim_traffic_manager['host'] and
+                @apim_traffic_manager['auth_url_port'] -%>
+                <AuthUrlGroup>ssl://<%= @apim_traffic_manager['host'] %>:<%= @apim_traffic_manager['auth_url_port'] %></AuthUrlGroup>
+            <%- else -%>
+                <AuthUrlGroup>ssl://${carbon.local.ip}:${auth.url.port}</AuthUrlGroup>
+            <%- end -%>
+            <%- if @apply_gateway_specific_configurations and @apim_traffic_manager and @apim_traffic_manager['username'] -%>
+                <Username><%= @apim_traffic_manager['username'] %></Username>
+            <%- else -%>
+                <Username>${admin.username}</Username>
+            <%- end -%>
+            <%- if @apply_gateway_specific_configurations and @apim_traffic_manager and @apim_traffic_manager['password'] -%>
+                <Password><%= @apim_traffic_manager['password'] %></Password>
+            <%- else -%>
+                <Password>${admin.password}</Password>
+            <%- end -%>
             <DataPublisherPool>
                 <MaxIdle>1000</MaxIdle>
                 <InitIdleCapacity>200</InitIdleCapacity>
@@ -571,28 +746,83 @@
             </DataPublisherThreadPool>
         </DataPublisher>
         <PolicyDeployer>
-            <Enabled>true</Enabled>
+        <%- if (@apply_publisher_specific_configurations or @apply_gateway_specific_configurations) and @apim_traffic_manager and
+        @apim_traffic_manager['host'] and @apim_traffic_manager['port'] -%>
+            <ServiceURL>https://<%= @apim_traffic_manager['host'] %>:<%= @apim_traffic_manager['port'] %>/services/</ServiceURL>
+        <%- else -%>
             <ServiceURL>https://localhost:${mgt.transport.https.port}${carbon.context}services/</ServiceURL>
+        <%- end -%>
+        <%- if (@apply_publisher_specific_configurations or @apply_gateway_specific_configurations) and
+        @apim_traffic_manager and @apim_traffic_manager['username'] -%>
+            <Username><%= @apim_traffic_manager['username'] %></Username>
+        <%- else -%>
             <Username>${admin.username}</Username>
+        <%- end -%>
+        <%- if (@apply_publisher_specific_configurations or @apply_gateway_specific_configurations) and
+        @apim_traffic_manager and @apim_traffic_manager['password'] -%>
+          <Password><%= @apim_traffic_manager['password'] %></Password>
+        <%- else -%>
             <Password>${admin.password}</Password>
+        <%- end -%>
         </PolicyDeployer>
         <BlockCondition>
-            <Enabled>true</Enabled>
+            <Enabled><%= @enable_block_condition %></Enabled>
             <!--InitDelay>300000</InitDelay>
             <Period>3600000</Period-->
         </BlockCondition>
         <JMSConnectionDetails>
-            <Enabled>true</Enabled>
+            <Enabled><%= @enable_jms_connection_details %></Enabled>
+            <%- if @enable_jms_connection_details and @apim_traffic_manager and @apim_traffic_manager['host'] and
+            @apim_traffic_manager['jms_url_port'] -%>
+            <ServiceURL>tcp://<%= @apim_traffic_manager['host'] %>:<%= @apim_traffic_manager['jms_url_port'] %></ServiceURL>
+            <%- else -%>
+            <ServiceURL>tcp://${carbon.local.ip}:${jms.port}</ServiceURL>
+            <%- end -%>
+            <%- if @enable_jms_connection_details and @apim_traffic_manager and @apim_traffic_manager['username'] -%>
+            <Username><%= @apim_traffic_manager['username'] %></Username>
+            <%- else -%>
+            <Username>${admin.username}</Username>
+            <%- end -%>
+            <%- if @enable_jms_connection_details and @apim_traffic_manager and @apim_traffic_manager['password'] -%>
+            <Password><%= @apim_traffic_manager['password'] %></Password>
+            <%- else -%>
+            <Password>${admin.password}</Password>
+            <%- end -%>
             <Destination>throttleData</Destination>
             <!--InitDelay>300000</InitDelay-->
+
             <JMSConnectionParameters>
                 <transport.jms.ConnectionFactoryJNDIName>TopicConnectionFactory</transport.jms.ConnectionFactoryJNDIName>
                 <transport.jms.DestinationType>topic</transport.jms.DestinationType>
                 <java.naming.factory.initial>org.wso2.andes.jndi.PropertiesFileInitialContextFactory</java.naming.factory.initial>
-                <connectionfactory.TopicConnectionFactory>amqp://${admin.username}:${admin.password}@clientid/carbon?brokerlist='tcp://${carbon.local.ip}:${jms.port}'</connectionfactory.TopicConnectionFactory>
+                <connectionfactory.TopicConnectionFactory>amqp://${jms.username}:${jms.password}@clientid/carbon?brokerlist='${jms.url}'</connectionfactory.TopicConnectionFactory>
             </JMSConnectionParameters>
+            <JMSTaskManager>
+                <MinThreadPoolSize>20</MinThreadPoolSize>
+                <MaxThreadPoolSize>100</MaxThreadPoolSize>
+                <KeepAliveTimeInMillis>1000</KeepAliveTimeInMillis>
+                <JobQueueSize>10</JobQueueSize>
+            </JMSTaskManager>
         </JMSConnectionDetails>
-
+        <%- if @disable_jms_event_parameters -%>
+        <!--<JMSEventPublisherParameters>
+                <java.naming.factory.initial>org.wso2.andes.jndi.PropertiesFileInitialContextFactory</java.naming.factory.initial>
+                <java.naming.provider.url>repository/conf/jndi.properties</java.naming.provider.url>
+                <transport.jms.DestinationType>topic</transport.jms.DestinationType>
+                <transport.jms.Destination>throttleData</transport.jms.Destination>
+                <transport.jms.ConcurrentPublishers>allow</transport.jms.ConcurrentPublishers>
+                <transport.jms.ConnectionFactoryJNDIName>TopicConnectionFactory</transport.jms.ConnectionFactoryJNDIName>
+        </JMSEventPublisherParameters>-->
+        <%- else -%>
+        <JMSEventPublisherParameters>
+                <java.naming.factory.initial>org.wso2.andes.jndi.PropertiesFileInitialContextFactory</java.naming.factory.initial>
+                <java.naming.provider.url>repository/conf/jndi.properties</java.naming.provider.url>
+                <transport.jms.DestinationType>topic</transport.jms.DestinationType>
+                <transport.jms.Destination>throttleData</transport.jms.Destination>
+                <transport.jms.ConcurrentPublishers>allow</transport.jms.ConcurrentPublishers>
+                <transport.jms.ConnectionFactoryJNDIName>TopicConnectionFactory</transport.jms.ConnectionFactoryJNDIName>
+        </JMSEventPublisherParameters>
+        <%- end -%>
         <!--DefaultLimits>
             <SubscriptionTierLimits>
                 <Gold>5000</Gold>
@@ -616,15 +846,15 @@
         <EnableJWTClaimConditions>false</EnableJWTClaimConditions>
         <EnableQueryParamConditions>false</EnableQueryParamConditions>
     </ThrottlingConfigurations>
-    
+
     <WorkflowConfigurations>
         <Enabled>false</Enabled>
-    	<ServerUrl>https://localhost:9445/bpmn</ServerUrl>   		
+    	<ServerUrl>https://localhost:9445/bpmn</ServerUrl>
     	<ServerUser>${admin.username}</ServerUser>
     	<ServerPassword>${admin.password}</ServerPassword>
-    	<WorkflowCallbackAPI>https://localhost:${mgt.transport.https.port}/api/am/publisher/v0.12/workflows/update-workflow-status</WorkflowCallbackAPI>
+    	<WorkflowCallbackAPI>https://localhost:${mgt.transport.https.port}/api/am/publisher/v0.11/workflows/update-workflow-status</WorkflowCallbackAPI>
         <TokenEndPoint>https://localhost:${https.nio.port}/token</TokenEndPoint>
-        <DCREndPoint>https://localhost:${mgt.transport.https.port}/client-registration/v0.12/register</DCREndPoint>
+        <DCREndPoint>https://localhost:${mgt.transport.https.port}/client-registration/v0.11/register</DCREndPoint>
         <DCREndPointUser>${admin.username}</DCREndPointUser>
         <DCREndPointPassword>${admin.password}</DCREndPointPassword>
     </WorkflowConfigurations>
@@ -636,8 +866,8 @@
             <ModelPackage>org.wso2.client.model.</ModelPackage>
             <ApiPackage>org.wso2.client.api.</ApiPackage>
             <!-- Configure supported languages/Frameworks as comma separated values,
-             Supported Languages/Frameworks : android, java, scala, csharp, dart, flash, groovy, javascript, jmeter,
-             nodejs, perl, php, python, ruby, swift, clojure, asyncScala, csharpDotNet2-->
+             Supported Languages/Frameworks : android, java, scala, csharp, cpp, dart, flash, go, groovy, javascript, jmeter,
+             nodejs, perl, php, python, ruby, swift, clojure, aspNet5, asyncScala, spring, csharpDotNet2, haskell-->
             <SupportedLanguages>java,android</SupportedLanguages>
         </ClientGeneration>
     </SwaggerCodegen>
