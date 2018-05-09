@@ -29,8 +29,16 @@ cp -r /tmp/puppet/* /etc/puppet/
 puppet module install puppetlabs/stdlib
 puppet module install 7terminals-java
 
-echo "Downloading packs..."
+# Download WUM client
+echo "Downloading WUM client..."
+wget https://product-dist.wso2.com/downloads/wum/2.0/wum-2.0-linux-x64.tar.gz -P /home/ubuntu/
+
+# Install WUM
+echo "Installing WUM..."
+sudo tar -xf /home/ubuntu/wum-2.0-linux-x64.tar.gz -C /usr/local/
+
 # JDK
+echo "Downloading packs..."
 wget --tries=3 -q --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-linux-x64.tar.gz -P /etc/puppet/files/packs
 
 # MySQL Connector
@@ -54,6 +62,10 @@ if [ "$CF_PRODUCT" == "APIM" ]; then
   mv /tmp/provision_db_apim.sh /usr/local/bin/
   chmod +x /usr/local/bin/provision_db_apim.sh
 
+  # Copy init script
+  cp /tmp/apim-init.sh /home/ubuntu/apim-init.sh
+  chmod +x /home/ubuntu/apim-init.sh
+
   mv /tmp/private_ip_extractor.py /usr/local/bin/private_ip_extractor.py
 fi
 
@@ -68,6 +80,27 @@ if [ "$CF_PRODUCT" == "APIM-ANALYTICS" ]; then
   # Copy DB provisioning script
   mv /tmp/provision_db_analytics.sh /usr/local/bin/
   chmod +x /usr/local/bin/provision_db_analytics.sh
+
+  # Copy init script
+  cp /tmp/apim-analytics-init.sh /home/ubuntu/apim-analytics-init.sh
+  chmod +x /home/ubuntu/apim-analytics-init.sh
+fi
+
+if [ "$CF_PRODUCT" == "MICRO-GATEWAY" ]; then
+  # Download pack
+  wget --tries=3 -q --user-agent="testuser" --referer="http://connect.wso2.com/wso2/getform/reg/new_product_download" https://product-dist.wso2.com/products/api-manager/2.2.0/wso2am-micro-gw-2.2.0.zip
+
+  # Copy DB provisioning script
+  #todo
+fi
+
+# Download IS as KM
+if [ "$CF_PRODUCT" == "IS-as-KM" ]; then
+  # Download pack
+  wget --tries=3 -q --user-agent="testuser" --referer="http://connect.wso2.com/wso2/getform/reg/new_product_download" https://product-dist.wso2.com/products/identity-server/5.5.0/wso2is-km-5.5.0.zip
+
+  # Copy DB provisioning script
+  #todo
 fi
 
 # Setup JDK
